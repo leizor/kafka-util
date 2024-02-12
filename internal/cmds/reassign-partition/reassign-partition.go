@@ -12,7 +12,7 @@ import (
 	"github.com/segmentio/kafka-go"
 	"github.com/spf13/cobra"
 
-	"github.com/leizor/kafka-util/pkg/cmds/vars"
+	"github.com/leizor/kafka-util/internal/cmds/vars"
 )
 
 var (

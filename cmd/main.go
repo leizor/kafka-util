@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/leizor/kafka-util/pkg/cmds"
+	"github.com/leizor/kafka-util/internal/cmds"
 )
 
 func main() {
