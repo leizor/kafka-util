@@ -24,36 +24,7 @@ var (
 var ReassignPartitionCmd = &cobra.Command{
 	Use: "reassign-partition",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		client := &kafka.Client{Addr: kafka.TCP(vars.BootstrapServer)}
-
-		brokerIDs, err := getBrokerIDs(replicas)
-		if err != nil {
-			return fmt.Errorf("problem parsing replica set: %w", err)
-		}
-		req := kafka.AlterPartitionReassignmentsRequest{
-			Topic: topic,
-			Assignments: []kafka.AlterPartitionReassignmentsRequestAssignment{
-				{
-					PartitionID: partition,
-					BrokerIDs:   brokerIDs,
-				},
-			},
-			Timeout: 60 * time.Second,
-		}
-
-		resp, err := client.AlterPartitionReassignments(context.Background(), &req)
-		if err != nil {
-			return fmt.Errorf("problem executing partition reassignments: %w", err)
-		}
-		if err = checkRespErrors(resp); err != nil {
-			return fmt.Errorf("partition reassignment response contained errors: %w", err)
-		}
-
-		waitForReassignment(client, topic, partition, brokerIDs)
-
-		log.Info().Msg("done")
-
-		return nil
+		return ReassignPartition(topic, partition, replicas)
 	},
 }
 
@@ -68,6 +39,39 @@ func init() {
 			panic(err)
 		}
 	}
+}
+
+func ReassignPartition(topic string, partition int, replicas string) error {
+	client := &kafka.Client{Addr: kafka.TCP(vars.BootstrapServer)}
+
+	brokerIDs, err := getBrokerIDs(replicas)
+	if err != nil {
+		return fmt.Errorf("problem parsing replica set: %w", err)
+	}
+	req := kafka.AlterPartitionReassignmentsRequest{
+		Topic: topic,
+		Assignments: []kafka.AlterPartitionReassignmentsRequestAssignment{
+			{
+				PartitionID: partition,
+				BrokerIDs:   brokerIDs,
+			},
+		},
+		Timeout: 60 * time.Second,
+	}
+
+	resp, err := client.AlterPartitionReassignments(context.Background(), &req)
+	if err != nil {
+		return fmt.Errorf("problem executing partition reassignments: %w", err)
+	}
+	if err = checkRespErrors(resp); err != nil {
+		return fmt.Errorf("partition reassignment response contained errors: %w", err)
+	}
+
+	waitForReassignment(client, topic, partition, brokerIDs)
+
+	log.Info().Msg("done")
+
+	return nil
 }
 
 func getBrokerIDs(replicas string) (res []int, err error) {

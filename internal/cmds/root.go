@@ -3,7 +3,6 @@ package cmds
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/leizor/kafka-util/internal/cmds/count-urps"
 	"github.com/leizor/kafka-util/internal/cmds/reassign-partition"
 	"github.com/leizor/kafka-util/internal/cmds/vars"
 )
@@ -20,5 +19,4 @@ func init() {
 	}
 
 	RootCmd.AddCommand(reassign_partition.ReassignPartitionCmd)
-	RootCmd.AddCommand(count_urps.CountURPsCommand)
 }
