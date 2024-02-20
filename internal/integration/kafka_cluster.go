@@ -141,6 +141,7 @@ func (kc *KafkaCluster) CreateTopicWithTraffic(topicName string, replicaAssignme
 			Topic:    topicName,
 			Balancer: &kafka.RoundRobin{},
 		}
+		defer func() { _ = p.Close() }()
 
 		msgNum := 0
 		for {
