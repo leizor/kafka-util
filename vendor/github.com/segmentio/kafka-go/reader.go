@@ -469,9 +469,11 @@ type ReaderConfig struct {
 	JoinGroupBackoff time.Duration
 
 	// RetentionTime optionally sets the length of time the consumer group will be saved
-	// by the broker
+	// by the broker. -1 will disable the setting and leave the
+	// retention up to the broker's offsets.retention.minutes property. By
+	// default, that setting is 1 day for kafka < 2.0 and 7 days for kafka >= 2.0.
 	//
-	// Default: 24h
+	// Default: -1
 	//
 	// Only used when GroupID is set
 	RetentionTime time.Duration
@@ -790,12 +792,12 @@ func (r *Reader) Close() error {
 func (r *Reader) ReadMessage(ctx context.Context) (Message, error) {
 	m, err := r.FetchMessage(ctx)
 	if err != nil {
-		return Message{}, err
+		return Message{}, fmt.Errorf("fetching message: %w", err)
 	}
 
 	if r.useConsumerGroup() {
 		if err := r.CommitMessages(ctx, m); err != nil {
-			return Message{}, err
+			return Message{}, fmt.Errorf("committing message: %w", err)
 		}
 	}
 

@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/orlangure/gnomock"
 	"github.com/segmentio/kafka-go"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -28,7 +30,7 @@ type KafkaCluster struct {
 //
 // Note that there can be containers and networks that need to be cleaned up even
 // if this returns an error.
-func StartKafkaCluster(ctx context.Context, numBrokers int) (*KafkaCluster, error) {
+func StartKafkaCluster(ctx context.Context, numBrokers int, options map[int][]gnomock.Option) (*KafkaCluster, error) {
 	kc := &KafkaCluster{
 		brokers: make([]*gnomock.Container, numBrokers),
 		stop:    make(chan interface{}),
@@ -48,7 +50,7 @@ func StartKafkaCluster(ctx context.Context, numBrokers int) (*KafkaCluster, erro
 	}
 
 	for i := 0; i < numBrokers; i++ {
-		c, err := startBroker(i, nwID, quorumVoters)
+		c, err := startBroker(i, nwID, quorumVoters, options[i])
 		if err != nil {
 			return kc, err
 		}
@@ -74,13 +76,13 @@ func StartKafkaCluster(ctx context.Context, numBrokers int) (*KafkaCluster, erro
 	return kc, nil
 }
 
-func startBroker(nodeID int, nwID string, quorumVoters []string) (*gnomock.Container, error) {
+func startBroker(nodeID int, nwID string, quorumVoters []string, options []gnomock.Option) (*gnomock.Container, error) {
 	ports := make(gnomock.NamedPorts)
 	ports["plaintext"] = gnomock.TCP(9092)
 	ports["controller"] = gnomock.TCP(9093)
 	ports["external"] = withHostPort(9094, 9094+nodeID+1)
 
-	return gnomock.StartCustom(kafkaImage, ports,
+	opts := []gnomock.Option{
 		gnomock.WithContainerName(fmt.Sprintf("kafka-%d", nodeID)),
 		gnomock.WithEnv(fmt.Sprintf("KAFKA_CFG_NODE_ID=%d", nodeID)),
 		gnomock.WithEnv("KAFKA_CFG_PROCESS_ROLES=controller,broker"),
@@ -96,7 +98,10 @@ func startBroker(nodeID int, nwID string, quorumVoters []string) (*gnomock.Conta
 		gnomock.WithEnv("KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=2"),
 		gnomock.WithEnv(fmt.Sprintf("KAFKA_KRAFT_CLUSTER_ID=%s", clusterID)),
 		gnomock.WithNetworkID(nwID),
-	)
+	}
+	opts = append(opts, options...)
+
+	return gnomock.StartCustom(kafkaImage, ports, opts...)
 }
 
 func withHostPort(port, hostPort int) gnomock.Port {
@@ -113,6 +118,10 @@ func (kc *KafkaCluster) GetBootstrapServer() string {
 
 func (kc *KafkaCluster) GetClient() *kafka.Client {
 	return kc.client
+}
+
+func (kc *KafkaCluster) GetNetworkID() string {
+	return kc.networkID
 }
 
 func (kc *KafkaCluster) CreateTopicWithTraffic(topicName string, replicaAssignments [][]int) error {
@@ -144,16 +153,15 @@ func (kc *KafkaCluster) CreateTopicWithTraffic(topicName string, replicaAssignme
 		defer func() { _ = p.Close() }()
 
 		msgNum := 0
+		val := make([]byte, 1024*2*2)
+		for i := range val {
+			val[i] = 0xff
+		}
 		for {
 			select {
 			case <-kc.stop:
 				return
 			default:
-				val := make([]byte, 128)
-				for i := range val {
-					val[i] = 0xff
-				}
-
 				_ = p.WriteMessages(context.Background(), kafka.Message{
 					Key:   []byte("key"),
 					Value: []byte(fmt.Sprintf("%s %d", val, msgNum)),
@@ -196,4 +204,26 @@ func toReplicaAssignments(in [][]int) []kafka.ReplicaAssignment {
 	}
 
 	return out
+}
+
+func assertReplicaAssignments(t *testing.T, client *kafka.Client, topicName string, expected [][]int) {
+	t.Helper()
+
+	resp, err := client.Metadata(context.Background(), &kafka.MetadataRequest{Topics: []string{topicName}})
+	require.NoError(t, err)
+
+	require.Len(t, resp.Topics, 1)
+	require.Equal(t, topicName, resp.Topics[0].Name)
+
+	actual := make([][]int, len(resp.Topics[0].Partitions))
+	for _, p := range resp.Topics[0].Partitions {
+		replicas := make([]int, len(p.Replicas))
+		for i, b := range p.Replicas {
+			replicas[i] = b.ID
+		}
+
+		actual[p.ID] = replicas
+	}
+
+	require.Equal(t, expected, actual)
 }

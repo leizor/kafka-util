@@ -4,6 +4,9 @@
 ## explicit; go 1.13
 github.com/Microsoft/go-winio
 github.com/Microsoft/go-winio/pkg/guid
+# github.com/cenkalti/backoff/v4 v4.2.1
+## explicit; go 1.18
+github.com/cenkalti/backoff/v4
 # github.com/davecgh/go-spew v1.1.1
 ## explicit
 github.com/davecgh/go-spew/spew
@@ -99,7 +102,7 @@ github.com/rs/zerolog
 github.com/rs/zerolog/internal/cbor
 github.com/rs/zerolog/internal/json
 github.com/rs/zerolog/log
-# github.com/segmentio/kafka-go v0.4.42
+# github.com/segmentio/kafka-go v0.4.47 => github.com/leizor/kafka-go v0.0.0-20240223004337-75e67dec9ab9
 ## explicit; go 1.15
 github.com/segmentio/kafka-go
 github.com/segmentio/kafka-go/compress
@@ -113,16 +116,20 @@ github.com/segmentio/kafka-go/protocol/addpartitionstotxn
 github.com/segmentio/kafka-go/protocol/alterclientquotas
 github.com/segmentio/kafka-go/protocol/alterconfigs
 github.com/segmentio/kafka-go/protocol/alterpartitionreassignments
+github.com/segmentio/kafka-go/protocol/alteruserscramcredentials
 github.com/segmentio/kafka-go/protocol/apiversions
 github.com/segmentio/kafka-go/protocol/consumer
 github.com/segmentio/kafka-go/protocol/createacls
 github.com/segmentio/kafka-go/protocol/createpartitions
 github.com/segmentio/kafka-go/protocol/createtopics
+github.com/segmentio/kafka-go/protocol/deleteacls
 github.com/segmentio/kafka-go/protocol/deletegroups
 github.com/segmentio/kafka-go/protocol/deletetopics
+github.com/segmentio/kafka-go/protocol/describeacls
 github.com/segmentio/kafka-go/protocol/describeclientquotas
 github.com/segmentio/kafka-go/protocol/describeconfigs
 github.com/segmentio/kafka-go/protocol/describegroups
+github.com/segmentio/kafka-go/protocol/describeuserscramcredentials
 github.com/segmentio/kafka-go/protocol/electleaders
 github.com/segmentio/kafka-go/protocol/endtxn
 github.com/segmentio/kafka-go/protocol/fetch
@@ -134,11 +141,13 @@ github.com/segmentio/kafka-go/protocol/joingroup
 github.com/segmentio/kafka-go/protocol/leavegroup
 github.com/segmentio/kafka-go/protocol/listgroups
 github.com/segmentio/kafka-go/protocol/listoffsets
+github.com/segmentio/kafka-go/protocol/listpartitionreassignments
 github.com/segmentio/kafka-go/protocol/metadata
 github.com/segmentio/kafka-go/protocol/offsetcommit
 github.com/segmentio/kafka-go/protocol/offsetdelete
 github.com/segmentio/kafka-go/protocol/offsetfetch
 github.com/segmentio/kafka-go/protocol/produce
+github.com/segmentio/kafka-go/protocol/rawproduce
 github.com/segmentio/kafka-go/protocol/saslauthenticate
 github.com/segmentio/kafka-go/protocol/saslhandshake
 github.com/segmentio/kafka-go/protocol/syncgroup
@@ -167,19 +176,19 @@ go.uber.org/zap/internal/color
 go.uber.org/zap/internal/exit
 go.uber.org/zap/internal/pool
 go.uber.org/zap/zapcore
-# golang.org/x/net v0.13.0
+# golang.org/x/net v0.17.0
 ## explicit; go 1.17
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
 # golang.org/x/sync v0.3.0
 ## explicit; go 1.17
 golang.org/x/sync/errgroup
-# golang.org/x/sys v0.10.0
+# golang.org/x/sys v0.13.0
 ## explicit; go 1.17
-golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3
 # github.com/orlangure/gnomock => github.com/leizor/gnomock v0.0.0-20240211095139-73dc423ea0b5
+# github.com/segmentio/kafka-go => github.com/leizor/kafka-go v0.0.0-20240223004337-75e67dec9ab9
