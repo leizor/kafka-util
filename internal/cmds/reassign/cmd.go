@@ -23,7 +23,8 @@ var (
 )
 
 var Cmd = &cobra.Command{
-	Use: "reassign",
+	Use:   "reassign",
+	Short: "Execute a single partition reassignment",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		client := &kafka.Client{Addr: kafka.TCP(vars.BootstrapServer)}
 
@@ -43,9 +44,9 @@ var Cmd = &cobra.Command{
 }
 
 func init() {
-	Cmd.Flags().StringVarP(&topic, "topic", "t", "", "The topic to reassign")
-	Cmd.Flags().IntVarP(&partition, "partition", "p", 0, "The partition to reassign")
-	Cmd.Flags().StringVarP(&replicas, "replicas", "r", "", "The replica set to assign the topic-partition to (ex: 1,2,3)")
+	Cmd.Flags().StringVarP(&topic, "topic", "t", "", "topic to reassign (required)")
+	Cmd.Flags().IntVarP(&partition, "partition", "p", 0, "partition to reassign (required)")
+	Cmd.Flags().StringVarP(&replicas, "replicas", "r", "", "replica set to assign the topic-partition to (ex: 1,2,3) (required)")
 
 	for _, flag := range []string{"topic", "partition", "replicas"} {
 		err := Cmd.MarkFlagRequired(flag)

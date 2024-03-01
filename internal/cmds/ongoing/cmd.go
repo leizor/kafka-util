@@ -22,7 +22,8 @@ var (
 )
 
 var Cmd = &cobra.Command{
-	Use: "ongoing",
+	Use:   "ongoing",
+	Short: "List, cancel, or wait for ongoing reassignments",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		client := &kafka.Client{Addr: kafka.TCP(vars.BootstrapServer)}
 
@@ -68,8 +69,8 @@ var Cmd = &cobra.Command{
 }
 
 func init() {
-	Cmd.Flags().BoolVarP(&cancel, "cancel", "c", false, "Cancel any ongoing reassignments.")
-	Cmd.Flags().BoolVarP(&wait, "wait", "w", false, "Wait for any ongoing reassignments to complete.")
+	Cmd.Flags().BoolVarP(&cancel, "cancel", "c", false, "cancel any ongoing reassignments")
+	Cmd.Flags().BoolVarP(&wait, "wait", "w", false, "wait for any ongoing reassignments to complete")
 }
 
 type reassignment struct {
