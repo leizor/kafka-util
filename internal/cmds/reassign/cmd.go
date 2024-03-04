@@ -68,7 +68,10 @@ func Partition(client *kafka.Client, topic string, partition int, brokerIDs []in
 		Timeout: vars.Timeout,
 	}
 
-	resp, err := client.AlterPartitionReassignments(context.Background(), &req)
+	ctx, cancel := context.WithTimeout(context.Background(), vars.Timeout)
+	defer cancel()
+
+	resp, err := client.AlterPartitionReassignments(ctx, &req)
 	if err != nil {
 		return fmt.Errorf("problem executing partition reassignments: %w", err)
 	}

@@ -1,0 +1,11 @@
+{
+  "partitions": [
+    {
+      "topic": "foo",
+      "partition": 1,
+      "replicas": [1,2,3],
+      "log_dirs": ["dir1", "dir2", "dir3"]
+    }
+  ],
+  "version": 1
+}

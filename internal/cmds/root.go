@@ -9,6 +9,7 @@ import (
 
 	"github.com/leizor/kafka-util/internal/cmds/ongoing"
 	"github.com/leizor/kafka-util/internal/cmds/reassign"
+	"github.com/leizor/kafka-util/internal/cmds/stage"
 	"github.com/leizor/kafka-util/internal/cmds/vars"
 )
 
@@ -40,6 +41,12 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&vars.BootstrapServer, "bootstrap-server", "", fmt.Sprintf("kafka bootstrap server, may also be set via the '%s' env var (required)", bootstrapServerEnvVar))
 	RootCmd.PersistentFlags().DurationVar(&vars.Timeout, "timeout", time.Minute, "amount of time to wait for a request to Kafka to complete")
 
-	RootCmd.AddCommand(reassign.Cmd)
-	RootCmd.AddCommand(ongoing.Cmd)
+	commands := []*cobra.Command{
+		ongoing.Cmd,
+		reassign.Cmd,
+		stage.Cmd,
+	}
+	for _, cmd := range commands {
+		RootCmd.AddCommand(cmd)
+	}
 }
