@@ -17,7 +17,7 @@ func CheckRespErrors(resp *kafka.AlterPartitionReassignmentsResponse) error {
 		errs = append(errs, resp.Error.Error())
 	}
 	for _, res := range resp.PartitionResults {
-		if res.Error != nil && resp.Error.Error() != res.Error.Error() {
+		if res.Error != nil && resp.Error != nil && resp.Error.Error() != res.Error.Error() {
 			errs = append(errs, fmt.Sprintf("[partition %d] %s", res.PartitionID, res.Error))
 		}
 	}
