@@ -63,7 +63,7 @@ var Cmd = &cobra.Command{
 
 		client := &kafka.Client{Addr: kafka.TCP(vars.BootstrapServer)}
 
-		err = ReconcileUntilDone(client, rs, maxMovesPerBroker)
+		err = ReconcileUntilDone(client, rs, maxMovesPerBroker, dryRun)
 		if err != nil {
 			return err
 		}
@@ -76,6 +76,7 @@ var Cmd = &cobra.Command{
 func init() {
 	Cmd.Flags().StringVarP(&reassignmentsFilepath, "reassignment-json-file", "f", "", "json file with the reassignment configuration (required)")
 	Cmd.Flags().IntVarP(&maxMovesPerBroker, "max-moves-per-broker", "m", 1, "max simultaneous inter-broker replica movements")
+	Cmd.Flags().BoolVar(&dryRun, "dry-run", false, "print reassignments only; do not execute them")
 
 	err := Cmd.MarkFlagRequired("reassignment-json-file")
 	if err != nil {
@@ -83,13 +84,14 @@ func init() {
 	}
 }
 
-func ReconcileUntilDone(client *kafka.Client, rs *Reassignments, maxMovesPerBroker int) error {
+func ReconcileUntilDone(client *kafka.Client, rs *Reassignments, maxMovesPerBroker int, dryRun bool) error {
+	state, err := getCurrentState(client, rs)
+	if err != nil {
+		return fmt.Errorf("problem retrieving cluster state: %w", err)
+	}
 
 	for i := 0; ; i++ {
-		state, err := getCurrentState(client, rs)
-		if err != nil {
-			return fmt.Errorf("problem retrieving cluster state: %w", err)
-		}
+		state.resetBrokerMovementCounts()
 
 		var cur []Reassignment
 		for _, r := range rs.Partitions {
@@ -111,8 +113,11 @@ func ReconcileUntilDone(client *kafka.Client, rs *Reassignments, maxMovesPerBrok
 		for _, r := range cur {
 			fmt.Println(r.String())
 		}
-		if err = applyReassignments(client, cur); err != nil {
-			return fmt.Errorf("problem applying reassignments: %w", err)
+
+		if !dryRun {
+			if err = applyReassignments(client, cur); err != nil {
+				return fmt.Errorf("problem applying reassignments: %w", err)
+			}
 		}
 
 		fmt.Println()
@@ -251,6 +256,12 @@ func (s state) maybeApplyReassignment(r Reassignment, maxMovesPerBroker int) boo
 	s.assignments[tp] = r.Replicas
 
 	return true
+}
+
+func (s state) resetBrokerMovementCounts() {
+	for b := range s.brokers {
+		s.brokers[b] = 0
+	}
 }
 
 func getCurrentState(client *kafka.Client, rs *Reassignments) (state, error) {

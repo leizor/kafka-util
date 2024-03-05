@@ -33,7 +33,7 @@ type KafkaCluster struct {
 func StartKafkaCluster(ctx context.Context, numBrokers int, options map[int][]gnomock.Option) (*KafkaCluster, error) {
 	kc := &KafkaCluster{
 		brokers: make([]*gnomock.Container, numBrokers),
-		stop:    make(chan interface{}),
+		stop:    make(chan interface{}, 1),
 	}
 
 	nwID, err := gnomock.StartNetwork(ctx, nwName)

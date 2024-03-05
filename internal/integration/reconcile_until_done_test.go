@@ -32,7 +32,7 @@ func TestReconcileUntilDone(t *testing.T) {
 				Replicas:  []int{2, 3},
 			},
 		},
-	}, 1))
+	}, 1, false))
 
 	assertReplicaAssignments(t, kc.GetClient(), "foobar", [][]int{{2, 3}})
 }
