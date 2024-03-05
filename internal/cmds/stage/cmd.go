@@ -90,14 +90,39 @@ func ReconcileUntilDone(client *kafka.Client, rs *Reassignments, maxMovesPerBrok
 		return fmt.Errorf("problem retrieving cluster state: %w", err)
 	}
 
+	// Do all replica swaps at once before starting the reconciliation loop.
+	var swaps []Reassignment
+	for _, r := range rs.Partitions {
+		for _, s := range r.getReassignmentSteps(state.assignments, maxMovesPerBroker) {
+			if len(s.swapping) > 0 {
+				swaps = append(swaps, *s)
+				state.assignments[topicPartition(s.Topic, s.Partition)] = s.Replicas
+			}
+		}
+	}
+
+	if len(swaps) > 0 {
+		fmt.Printf("Applying reassignments (phase 0):\n")
+		for _, r := range swaps {
+			fmt.Println(r.String())
+		}
+
+		if !dryRun {
+			if err = applyReassignments(client, swaps); err != nil {
+				return fmt.Errorf("problem applying reassignments: %w", err)
+			}
+		}
+		fmt.Println()
+	}
+
 	for i := 0; ; i++ {
 		state.resetBrokerMovementCounts()
 
 		var cur []Reassignment
 		for _, r := range rs.Partitions {
 			for _, s := range r.getReassignmentSteps(state.assignments, maxMovesPerBroker) {
-				if state.maybeApplyReassignment(s, maxMovesPerBroker) {
-					cur = append(cur, s)
+				if state.maybeApplyReassignment(*s, maxMovesPerBroker) {
+					cur = append(cur, *s)
 				}
 			}
 		}
@@ -320,39 +345,81 @@ type Reassignment struct {
 
 	adding   []int
 	removing []int
+	swapping []int
 }
 
 func (r Reassignment) String() string {
 	return fmt.Sprintf("%s-%d; replicas: %v, adding: %v, removing: %v", r.Topic, r.Partition, r.Replicas, r.adding, r.removing)
 }
 
+// getCurrentAssignmentOrdered retrieves the assignment that corresponds to
+// this reassignment's topic-partition, taking care to place replicas in their
+// target indices if applicable.
+func (r Reassignment) getCurrentAssignmentOrdered(assignments map[string][]int) ([]int, bool, []int) {
+	current := assignments[topicPartition(r.Topic, r.Partition)]
+
+	ordered := make([]int, len(current))
+	for i := range current {
+		ordered[i] = -1
+	}
+
+	reordered := false
+	var add, remove []int
+
+	for i, replica := range current {
+		if idx := slices.Index(r.Replicas, replica); idx > -1 && idx != i {
+			if idx < len(ordered) {
+				ordered[idx] = replica
+			} else {
+				ordered[len(ordered)-1] = replica
+				add = append(add, replica)
+			}
+			reordered = true
+			continue
+		}
+		remove = append(remove, replica)
+	}
+
+	for _, replica := range remove {
+		for i, b := range ordered {
+			if b == -1 {
+				ordered[i] = replica
+				break
+			}
+		}
+	}
+
+	return ordered, reordered, add
+}
+
 // getReassignmentSteps breaks an assignment into smaller steps depending on
 // what maxMovesPerBroker is provided.
-func (r Reassignment) getReassignmentSteps(assignments map[string][]int, maxMovesPerBroker int) []Reassignment {
-	current := assignments[topicPartition(r.Topic, r.Partition)]
+func (r Reassignment) getReassignmentSteps(assignments map[string][]int, maxMovesPerBroker int) []*Reassignment {
+	current, reordered, addReplicas := r.getCurrentAssignmentOrdered(assignments)
+
 	l := len(r.Replicas)
 	if l < len(current) {
 		l = len(current)
 	}
 
 	type replicaMvmt struct {
-		idx int
-		add int
-		rmv int
+		idx    int
+		add    int
+		remove int
 	}
 
 	var steps [][]replicaMvmt
 	for i := 0; i < l; i++ {
-		rm := replicaMvmt{idx: i, add: -1, rmv: -1}
+		rm := replicaMvmt{idx: i, add: -1, remove: -1}
 
 		if i < len(r.Replicas) {
 			rm.add = r.Replicas[i]
 		}
 		if i < len(current) {
-			rm.rmv = current[i]
+			rm.remove = current[i]
 		}
 
-		if rm.add == rm.rmv {
+		if rm.add == rm.remove {
 			// Not a replica movement.
 			continue
 		}
@@ -363,7 +430,7 @@ func (r Reassignment) getReassignmentSteps(assignments map[string][]int, maxMove
 		steps[len(steps)-1] = append(steps[len(steps)-1], rm)
 	}
 
-	rsSteps := make([]Reassignment, len(steps))
+	rsSteps := make([]*Reassignment, len(steps))
 	prv := current
 	for i, s := range steps {
 		mid := make([]int, len(prv))
@@ -373,24 +440,26 @@ func (r Reassignment) getReassignmentSteps(assignments map[string][]int, maxMove
 
 		var adding, removing []int
 		for _, m := range s {
-			if m.add > -1 && m.rmv > -1 {
+			if m.add > -1 && m.remove > -1 {
 				// Replacement.
 				mid[m.idx] = m.add
 				adding = append(adding, m.add)
-				removing = append(removing, m.rmv)
+				if !slices.Contains(addReplicas, m.remove) {
+					removing = append(removing, m.remove)
+				}
 			} else if m.add > -1 {
 				// Increasing RF.
 				mid = append(mid, m.add)
 				adding = append(adding, m.add)
-			} else if m.rmv > -1 {
+			} else if m.remove > -1 {
 				// Decreasing RF.
 				mid = slices.DeleteFunc(mid, func(b int) bool {
-					return b == m.rmv
+					return b == m.remove
 				})
-				removing = append(removing, m.rmv)
+				removing = append(removing, m.remove)
 			}
 		}
-		rsSteps[i] = Reassignment{
+		rsSteps[i] = &Reassignment{
 			Topic:     r.Topic,
 			Partition: r.Partition,
 			Replicas:  mid,
@@ -399,6 +468,27 @@ func (r Reassignment) getReassignmentSteps(assignments map[string][]int, maxMove
 		}
 
 		prv = mid
+	}
+
+	if reordered {
+		rsSteps = append([]*Reassignment{
+			{
+				Topic:     r.Topic,
+				Partition: r.Partition,
+				Replicas:  current,
+				swapping:  current,
+			},
+		}, rsSteps...)
+
+		if len(addReplicas) > 0 {
+			for _, step := range rsSteps[1:] {
+				for _, replica := range addReplicas {
+					if !slices.Contains(step.Replicas, replica) {
+						step.Replicas = append(step.Replicas, replica)
+					}
+				}
+			}
+		}
 	}
 
 	return rsSteps

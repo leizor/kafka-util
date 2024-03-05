@@ -30,7 +30,7 @@ func TestGetReassignmentSteps(t *testing.T) {
 		r                 Reassignment
 		state             map[string][]int
 		maxMovesPerBroker int
-		expected          []Reassignment
+		expected          []*Reassignment
 	}
 	testCases := map[string]testCase{
 		"null reassignment": {
@@ -43,7 +43,7 @@ func TestGetReassignmentSteps(t *testing.T) {
 				"foobar-0": {0, 1, 2},
 			},
 			maxMovesPerBroker: 1,
-			expected:          []Reassignment{},
+			expected:          []*Reassignment{},
 		},
 		"maxMovesPerBroker=1, full replacement": {
 			r: Reassignment{
@@ -56,7 +56,7 @@ func TestGetReassignmentSteps(t *testing.T) {
 				"foobar-1": {0, 1, 2},
 			},
 			maxMovesPerBroker: 1,
-			expected: []Reassignment{
+			expected: []*Reassignment{
 				{
 					Topic:     "foobar",
 					Partition: 0,
@@ -90,7 +90,7 @@ func TestGetReassignmentSteps(t *testing.T) {
 				"foobar-0": {0, 1, 2},
 			},
 			maxMovesPerBroker: 1,
-			expected: []Reassignment{
+			expected: []*Reassignment{
 				{
 					Topic:     "foobar",
 					Partition: 0,
@@ -117,7 +117,7 @@ func TestGetReassignmentSteps(t *testing.T) {
 				"foobar-0": {0, 1, 2, 3},
 			},
 			maxMovesPerBroker: 1,
-			expected: []Reassignment{
+			expected: []*Reassignment{
 				{
 					Topic:     "foobar",
 					Partition: 0,
@@ -144,7 +144,7 @@ func TestGetReassignmentSteps(t *testing.T) {
 				"foobar-0": {0, 1},
 			},
 			maxMovesPerBroker: 1,
-			expected: []Reassignment{
+			expected: []*Reassignment{
 				{
 					Topic:     "foobar",
 					Partition: 0,
@@ -171,7 +171,7 @@ func TestGetReassignmentSteps(t *testing.T) {
 				"foobar-0": {0, 1, 2},
 			},
 			maxMovesPerBroker: 2,
-			expected: []Reassignment{
+			expected: []*Reassignment{
 				{
 					Topic:     "foobar",
 					Partition: 0,
@@ -198,7 +198,7 @@ func TestGetReassignmentSteps(t *testing.T) {
 				"foobar-0": {0, 1, 2},
 			},
 			maxMovesPerBroker: 2,
-			expected: []Reassignment{
+			expected: []*Reassignment{
 				{
 					Topic:     "foobar",
 					Partition: 0,
@@ -218,7 +218,7 @@ func TestGetReassignmentSteps(t *testing.T) {
 				"foobar-0": {0, 1, 2, 3},
 			},
 			maxMovesPerBroker: 2,
-			expected: []Reassignment{
+			expected: []*Reassignment{
 
 				{
 					Topic:     "foobar",
@@ -239,7 +239,7 @@ func TestGetReassignmentSteps(t *testing.T) {
 				"foobar-0": {0, 1},
 			},
 			maxMovesPerBroker: 2,
-			expected: []Reassignment{
+			expected: []*Reassignment{
 				{
 					Topic:     "foobar",
 					Partition: 0,
@@ -259,7 +259,7 @@ func TestGetReassignmentSteps(t *testing.T) {
 				"foobar-0": {0, 1, 2},
 			},
 			maxMovesPerBroker: 3,
-			expected: []Reassignment{
+			expected: []*Reassignment{
 				{
 					Topic:     "foobar",
 					Partition: 0,
@@ -279,7 +279,7 @@ func TestGetReassignmentSteps(t *testing.T) {
 				"foobar-0": {0, 1, 2},
 			},
 			maxMovesPerBroker: 3,
-			expected: []Reassignment{
+			expected: []*Reassignment{
 				{
 					Topic:     "foobar",
 					Partition: 0,
@@ -299,7 +299,7 @@ func TestGetReassignmentSteps(t *testing.T) {
 				"foobar-0": {0, 1, 2, 3},
 			},
 			maxMovesPerBroker: 3,
-			expected: []Reassignment{
+			expected: []*Reassignment{
 
 				{
 					Topic:     "foobar",
@@ -320,7 +320,7 @@ func TestGetReassignmentSteps(t *testing.T) {
 				"foobar-0": {0, 1},
 			},
 			maxMovesPerBroker: 3,
-			expected: []Reassignment{
+			expected: []*Reassignment{
 				{
 					Topic:     "foobar",
 					Partition: 0,
@@ -340,13 +340,139 @@ func TestGetReassignmentSteps(t *testing.T) {
 				"foobar-0": {0, 1, 2},
 			},
 			maxMovesPerBroker: 0,
-			expected: []Reassignment{
+			expected: []*Reassignment{
 				{
 					Topic:     "foobar",
 					Partition: 0,
 					Replicas:  []int{3, 4, 5},
 					adding:    []int{3, 4, 5},
 					removing:  []int{0, 1, 2},
+				},
+			},
+		},
+		"change replica set order": {
+			r: Reassignment{
+				Topic:     "foobar",
+				Partition: 0,
+				Replicas:  []int{0, 1},
+			},
+			state: map[string][]int{
+				"foobar-0": {1, 0},
+			},
+			maxMovesPerBroker: 1,
+			expected: []*Reassignment{
+				{
+					Topic:     "foobar",
+					Partition: 0,
+					Replicas:  []int{0, 1},
+					swapping:  []int{0, 1},
+				},
+			},
+		},
+		"change replica set order, change replicas": {
+			r: Reassignment{
+				Topic:     "foobar",
+				Partition: 0,
+				Replicas:  []int{2, 3, 4},
+			},
+			state: map[string][]int{
+				"foobar-0": {0, 2, 1},
+			},
+			maxMovesPerBroker: 1,
+			expected: []*Reassignment{
+				{
+					Topic:     "foobar",
+					Partition: 0,
+					Replicas:  []int{2, 0, 1},
+					swapping:  []int{2, 0, 1},
+				},
+				{
+					Topic:     "foobar",
+					Partition: 0,
+					Replicas:  []int{2, 3, 1},
+					adding:    []int{3},
+					removing:  []int{0},
+				},
+				{
+					Topic:     "foobar",
+					Partition: 0,
+					Replicas:  []int{2, 3, 4},
+					adding:    []int{4},
+					removing:  []int{1},
+				},
+			},
+		},
+		"change replica set order, decrease rf": {
+			r: Reassignment{
+				Topic:     "foobar",
+				Partition: 0,
+				Replicas:  []int{3, 0},
+			},
+			state: map[string][]int{
+				"foobar-0": {0, 1, 2, 3},
+			},
+			maxMovesPerBroker: 1,
+			expected: []*Reassignment{
+				{
+					Topic:     "foobar",
+					Partition: 0,
+					Replicas:  []int{3, 0, 1, 2},
+					swapping:  []int{3, 0, 1, 2},
+				},
+				{
+					Topic:     "foobar",
+					Partition: 0,
+					Replicas:  []int{3, 0, 2},
+					removing:  []int{1},
+				},
+				{
+					Topic:     "foobar",
+					Partition: 0,
+					Replicas:  []int{3, 0},
+					removing:  []int{2},
+				},
+			},
+		},
+		"change replica set order, increase rf": {
+			r: Reassignment{
+				Topic:     "foobar",
+				Partition: 0,
+				Replicas:  []int{0, 1, 2, 3, 4},
+			},
+			state: map[string][]int{
+				"foobar-0": {3, 0},
+			},
+			maxMovesPerBroker: 1,
+			expected: []*Reassignment{
+				{
+					Topic:     "foobar",
+					Partition: 0,
+					Replicas:  []int{0, 3},
+					swapping:  []int{0, 3},
+				},
+				{
+					Topic:     "foobar",
+					Partition: 0,
+					Replicas:  []int{0, 1, 3},
+					adding:    []int{1},
+				},
+				{
+					Topic:     "foobar",
+					Partition: 0,
+					Replicas:  []int{0, 1, 2, 3},
+					adding:    []int{2},
+				},
+				{
+					Topic:     "foobar",
+					Partition: 0,
+					Replicas:  []int{0, 1, 2, 3},
+					adding:    []int{3},
+				},
+				{
+					Topic:     "foobar",
+					Partition: 0,
+					Replicas:  []int{0, 1, 2, 3, 4},
+					adding:    []int{4},
 				},
 			},
 		},
