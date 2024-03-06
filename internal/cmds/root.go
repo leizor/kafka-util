@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	version               = "0.01"
+	version               = "1.0"
 	bootstrapServerEnvVar = "KAFKA_BOOTSTRAP_SERVER"
 )
 
