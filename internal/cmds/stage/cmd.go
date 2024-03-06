@@ -75,7 +75,7 @@ var Cmd = &cobra.Command{
 
 func init() {
 	Cmd.Flags().StringVarP(&reassignmentsFilepath, "reassignment-json-file", "f", "", "json file with the reassignment configuration (required)")
-	Cmd.Flags().IntVarP(&maxMovesPerBroker, "max-moves-per-broker", "m", 1, "max simultaneous inter-broker replica movements")
+	Cmd.Flags().IntVarP(&maxMovesPerBroker, "max-moves-per-broker", "m", 1, "max replica movements per broker, set to 0 for no limit")
 	Cmd.Flags().BoolVar(&dryRun, "dry-run", false, "print reassignments only; do not execute them")
 
 	err := Cmd.MarkFlagRequired("reassignment-json-file")
@@ -269,7 +269,7 @@ func (s state) maybeApplyReassignment(r Reassignment, maxMovesPerBroker int) boo
 		if delta[b] {
 			numMoves += 1
 		}
-		if numMoves > maxMovesPerBroker {
+		if maxMovesPerBroker > 0 && numMoves > maxMovesPerBroker {
 			return false
 		}
 	}
