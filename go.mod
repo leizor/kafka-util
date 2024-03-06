@@ -7,7 +7,6 @@ toolchain go1.21.4
 require (
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/orlangure/gnomock v0.30.0
-	github.com/rs/zerolog v1.29.1
 	github.com/segmentio/kafka-go v0.4.47
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.4
@@ -25,8 +24,6 @@ require (
 	github.com/google/uuid v1.3.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/klauspost/compress v1.15.9 // indirect
-	github.com/mattn/go-colorable v0.1.12 // indirect
-	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/pierrec/lz4/v4 v4.1.15 // indirect
