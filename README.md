@@ -1,5 +1,8 @@
 # kafka-util
-Miscellaneous Kafka utilities written in Go.
+
+Kafka utilities meant to supplement existing tools such as `kafka-topics.sh`, `kafka-reassign-partitions.sh`, and `kafka-leader-election.sh`.
+
+## Kafka bootstrap server
 
 A Kafka bootstrap server needs to be passed in either with the `--bootstrap-server` flag or the `KAFKA_BOOTSTRAP_SERVER` environment variable.
 
@@ -32,12 +35,12 @@ Do the above, but wait for the reassignment to complete before returning:
 kafka-util reassign -t foobar -p 0 -r 0,1,2 && kafka-util ongoing --wait
 ```
 
-## Reassign multiple partitions with a concurrency limit
+## Reassign multiple partitions with a per-broker concurrency limit
 
 The `stage` subcommand executes a series of partition reassignments.
 
 The partition reassignments are given as a JSON file in the same format that the
-'kafka-reassign-partitions.sh' utility expects:
+'kafka-reassign-partitions.sh' utility generates:
 
 ```json
 {
