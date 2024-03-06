@@ -40,7 +40,7 @@ kafka-util reassign -t foobar -p 0 -r 0,1,2 && kafka-util ongoing --wait
 The `stage` subcommand executes a series of partition reassignments.
 
 The partition reassignments are given as a JSON file in the same format that the
-'kafka-reassign-partitions.sh' utility generates:
+`kafka-reassign-partitions.sh` utility generates:
 
 ```json
 {
