@@ -10,6 +10,7 @@ import (
 	"github.com/leizor/kafka-util/internal/cmds/ongoing"
 	"github.com/leizor/kafka-util/internal/cmds/reassign"
 	"github.com/leizor/kafka-util/internal/cmds/stage"
+	"github.com/leizor/kafka-util/internal/cmds/topics"
 	"github.com/leizor/kafka-util/internal/cmds/vars"
 )
 
@@ -45,6 +46,7 @@ func init() {
 		ongoing.Cmd,
 		reassign.Cmd,
 		stage.Cmd,
+		topics.Cmd,
 	}
 	for _, cmd := range commands {
 		RootCmd.AddCommand(cmd)
