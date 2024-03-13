@@ -93,6 +93,7 @@ func printDescribeTopics(client *kafka.Client, topics []string) error {
 				dist[p.Replicas[0].ID]++
 			}
 			printDist(dist)
+			fmt.Println()
 		}
 	}
 
@@ -107,6 +108,7 @@ func printDescribeTopics(client *kafka.Client, topics []string) error {
 				}
 			}
 			printDist(dist)
+			fmt.Println()
 		}
 	}
 
@@ -118,6 +120,7 @@ func printDescribeTopics(client *kafka.Client, topics []string) error {
 					p.Topic, p.ID, p.Leader.ID, toBrokersString(p.Replicas), toBrokersString(p.Isr),
 				)
 			}
+			fmt.Println()
 		}
 	}
 
