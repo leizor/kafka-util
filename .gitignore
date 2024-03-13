@@ -23,3 +23,6 @@ go.work
 # Build output
 kafka-util
 dist/
+
+# Mac stuff
+.DS_Store

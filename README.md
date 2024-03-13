@@ -70,3 +70,25 @@ Use the `--dry-run` flag to print the reassignments without actually executing t
 ```shell
 kafka-util stage --reassignment-json-file reassignments.json --max-moves-per-broker 1 --dry-run
 ```
+
+## Describe topics
+
+To describe topics:
+```shell
+kafka-util topics --topic foobar --topic foobaz
+```
+
+To print partition leadership distribution per topic:
+```shell
+kafka-util topics --topic foobar --topic foobaz --leader-distribution
+```
+
+To print partition replica distribution per topic:
+```shell
+kafka-util topics --topic foobar --topic foobaz --replica-distribution
+```
+
+Generate a topics-to-move JSON file:
+```shell
+kafka-util topics --topic foobar --topic foobaz --generate
+```
