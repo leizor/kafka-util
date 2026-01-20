@@ -26,3 +26,6 @@ dist/
 
 # Mac stuff
 .DS_Store
+
+# Goland
+.idea/
